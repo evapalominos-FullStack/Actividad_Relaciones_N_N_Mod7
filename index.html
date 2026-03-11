@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión Películas y Actores</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; line-height: 1.6; }
+        section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        input { margin: 5px 0; display: block; padding: 8px; width: 100%; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; padding: 10px; cursor: pointer; width: 100%; }
+        button:hover { background: #218838; }
+        ul { list-style: none; padding: 0; }
+        li { background: #f4f4f4; margin: 5px 0; padding: 10px; border-left: 5px solid #28a745; }
+    </style>
+</head>
+<body>
+
+    <h1>🎬 Cine DB Admin</h1>
+
+    <section>
+        <h2>Nueva Película</h2>
+        <input type="text" id="titulo" placeholder="Título de la película">
+        <input type="number" id="anio" placeholder="Año de estreno">
+        <button onclick="crearPelicula()">Guardar Película</button>
+    </section>
+
+    <section>
+        <h2>Asignar Actor a Película (Transacción)</h2>
+        <input type="number" id="p_id" placeholder="ID de Película">
+        <input type="number" id="a_id" placeholder="ID de Actor">
+        <button onclick="asignarActor()" style="background: #007bff;">Vincular ID's</button>
+    </section>
+
+    <section>
+        <h2>Listado de Películas</h2>
+        <button onclick="cargarPeliculas()" style="background: #6c757d; margin-bottom: 10px;">Actualizar Lista</button>
+        <ul id="listaPeliculas"></ul>
+    </section>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        async function cargarPeliculas() {
+            const res = await fetch(`${API_URL}/peliculas`);
+            const data = await res.json();
+            const lista = document.getElementById('listaPeliculas');
+            
+            lista.innerHTML = data.map(p => `
+                <li>
+                    <strong>ID ${p.id}: ${p.titulo}</strong> (${p.anio}) <br>
+                    <small>Actores: ${p.Actors && p.Actors.length > 0 
+                        ? p.Actors.map(a => a.nombre).join(', ') 
+                        : 'Sin actores asignados'}</small>
+                </li>
+            `).join('');
+        }
+
+        async function crearPelicula() {
+            const titulo = document.getElementById('titulo').value;
+            const anio = document.getElementById('anio').value;
+
+            await fetch(`${API_URL}/peliculas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo, anio })
+            });
+            
+            alert('Película creada!');
+            cargarPeliculas();
+        }
+
+        async function asignarActor() {
+            const pelicula_id = document.getElementById('p_id').value;
+            const actor_id = document.getElementById('a_id').value;
+
+            const res = await fetch(`${API_URL}/asignar-actor`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pelicula_id, actor_id })
+            });
+
+            if (res.ok) {
+                alert('Asignación exitosa vía Transacción');
+                cargarPeliculas();
+            } else {
+                alert('Error al asignar (Verifica que los IDs existan)');
+            }
+        }
+
+        // Carga inicial
+        cargarPeliculas();
+    </script>
+    <section>
+    <h2>Nuevo Actor</h2>
+    <input type="text" id="nombre" placeholder="Nombre del actor">
+    <input type="date" id="fecha" placeholder="Fecha Nacimiento">
+    <button onclick="crearActor()" style="background: #e83e8c;">Guardar Actor</button>
+</section>
+
+<script>
+    async function crearActor() {
+    const nombre = document.getElementById('nombre').value;
+    const fecha_nacimiento = document.getElementById('fecha').value; // <--- Debe ser así
+
+    await fetch(`${API_URL}/actores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, fecha_nacimiento }) // <--- Enviamos 'fecha_nacimiento'
+    });
+    
+    alert('Actor guardado!');
+}
+
+</script>
+
+</body>
+</html>
+
